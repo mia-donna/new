@@ -28,10 +28,17 @@ type Balance =  Int
 type Name = String
 type Value = Int
 
+data Coin = Head | Tail deriving (Show, Eq)
+
+coinFlip :: IO Coin
+coinFlip = do
+    r <- randomIO :: IO Bool
+    return $ if r then Head else Tail
 
 main :: IO ()
 main = do
     -- create customers
+    putStrLn $ "3 customers created."
     let c1 = Customer {name = "C1", balance = 100, account = 1}
     let c2 = Customer {name = "C2", balance = 100, account = 2} 
     let c3 = Customer {name = "C3", balance = 100, account = 3}
@@ -42,8 +49,11 @@ main = do
     two <- newEmptyMVar
     three <- newEmptyMVar
     value <- newEmptyMVar -- for value
+    coinbox <- newEmptyMVar -- for value
     -- fork the customer processes
-    mapM_ forkIO [process c1 one value, process c2 two value, process c3 three value]
+    putStrLn $ "3 customer threads being created."
+    mapM_ forkIO [process c1 one value coinbox, process c2 two value coinbox, process c3 three value coinbox] 
+    -- create a box for each process
     c <- takeMVar one
     d <- takeMVar two
     e <- takeMVar three
@@ -51,12 +61,24 @@ main = do
     putStrLn $ "hi " ++ (show d)
     putStrLn $ "hi " ++ (show e)
 
-process :: Customer -> MVar Customer -> MVar Value -> IO () 
-process cust custbox value = do
+    putStrLn $ "done"
+
+process :: Customer -> MVar Customer -> MVar Value -> MVar Coin -> IO () 
+process cust custbox value coinbox = do
     --v <- takeMVar value -- just a method to run it / blocks it if enabled
+    c1 <- coinFlip
     putMVar custbox cust
+    putStrLn $ (show cust) ++ " -- got " ++ (show c1)
     threadDelay 100
-    process cust custbox value
+    process cust custbox value coinbox
+
+
+randomN :: IO Int 
+randomN = do
+    r <- randomRIO (1, 6)
+    return r
+
+
 
 
 
@@ -81,7 +103,4 @@ process cust custbox value = do
 -- first one to both is the match
 -- need to put their result in a box
 
-randomN :: IO Int 
-randomN = do
-    r <- randomRIO (1, 6)
-    return r
+
