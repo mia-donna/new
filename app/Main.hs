@@ -88,6 +88,8 @@ main = do
     let list_try = c:d:e:f:[]
     putStrLn $ "HIhere!!!!" ++ (show list_try)
     putStrLn $ "here!!!!" ++ (show (list_try!!0)) 
+    let z = pick list_try -- work out how to return this
+    putStrLn $ "do"
     --putStrLn $ "hi " ++ (show c)
     --putStrLn $ "hi " ++ (show d)
     --putStrLn $ "hi " ++ (show e)
@@ -132,7 +134,8 @@ main = do
     putStrLn $ "hi " ++ (show f) -}
 
 
-
+pick :: [a] -> IO a
+pick xs = randomRIO (0, length xs - 1) >>= return . (xs !!)
 
 
 
