@@ -30,8 +30,8 @@ type Value = Int
 
 data Type = Payee | Recipient deriving (Show, Eq)
 
-coinFlip :: IO Type
-coinFlip = do
+typeFlip :: IO Type
+typeFlip = do
     r <- randomIO :: IO Bool
     return $ if r then Payee else Recipient
 
@@ -50,14 +50,15 @@ main = do
     three <- newEmptyMVar
     four <- newEmptyMVar
     value <- newEmptyMVar -- for value
-    typebox1 <- newEmptyMVar -- for random customer type
-    typebox2 <- newEmptyMVar -- for random customer type
-    typebox3 <- newEmptyMVar -- for random customer type
-    typebox4 <- newEmptyMVar -- for random customer type
+    --typebox1 <- newEmptyMVar -- for random customer type
+    --typebox2 <- newEmptyMVar -- for random customer type
+    --typebox3 <- newEmptyMVar -- for random customer type
+    --typebox4 <- newEmptyMVar -- for random customer type
+    typebox <- newEmptyMVar -- for random customer type
     list <- newEmptyMVar -- for bool list
     -- fork the customer processes
     putStrLn $ "4 customer threads being created."
-    mapM_ forkIO [process c1 one value typebox1 , process c2 two value typebox2 , process c3 three value typebox3, process c4 four value typebox4 ] 
+    mapM_ forkIO [process c1 one value typebox , process c2 two value typebox , process c3 three value typebox, process c4 four value typebox ] 
     -- create a box for each process
     c <- takeMVar one
     d <- takeMVar two
@@ -67,22 +68,30 @@ main = do
     putStrLn $ "hi " ++ (show d)
     putStrLn $ "hi " ++ (show e)
     putStrLn $ "hi " ++ (show f)
-    test <- takeMVar typebox1 -- only runs if c1 gets Payee
+    --test <- takeMVar typebox1 -- only runs if c1 gets Payee
+    test <- takeMVar typebox  
+
     putStrLn $ "type test " ++ (show test)
+    putStrLn $ "hi " ++ (show c) 
+    putStrLn $ "hi " ++ (show d) 
+    putStrLn $ "hi " ++ (show e) 
+    putStrLn $ "hi " ++ (show f) 
+    
     putStrLn $ "done"
 
+-- CUSTOMER THREAD PROCESS : picks random type, puts the type in a type box and customer in a customer box
 process :: Customer -> MVar Customer -> MVar Value -> MVar Type -> IO () 
 process cust custbox value typebox = do
     --v <- takeMVar value -- just a method to run it / blocks it if enabled
-    t1 <- coinFlip
+    t1 <- typeFlip
     putMVar custbox cust
     putStrLn $ (show cust) ++ " -- got " ++ (show t1)
     if t1 == Payee then do
-        putStrLn $ "payee group"
+        putStrLn $ (show cust) ++ " -- joining Payee group"
         putMVar typebox Payee
     else do 
-       putStrLn $ "deposit group"   
-       
+       putStrLn $ (show cust) ++ " -- joining Recipient group"   
+       putMVar typebox Recipient
 
 
 randomN :: IO Int 
