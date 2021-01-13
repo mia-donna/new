@@ -56,6 +56,15 @@ typeFlip = do
     r <- randomIO :: IO Bool
     return $ if r then Payee else Recipient
 
+
+randomCustomer :: IO Int 
+randomCustomer = do
+    r <- randomRIO (0, 3)
+    return r
+
+pick :: [a] -> IO a
+pick xs = randomRIO (0, length xs - 1) >>= return . (xs !!)
+
 main :: IO ()
 main = do
     -- create customers
@@ -85,11 +94,21 @@ main = do
     d <- takeMVar two
     e <- takeMVar three
     f <- takeMVar four
+
     let list_try = c:d:e:f:[]
     putStrLn $ "HIhere!!!!" ++ (show list_try)
     putStrLn $ "here!!!!" ++ (show (list_try!!0)) 
-    let z = pick list_try -- work out how to return this
-    putStrLn $ "do"
+    let z = pick list_try -- work out how to return this (cant as uses IO)
+    
+    random <- randomCustomer
+    random2 <- randomCustomer
+    if random /= random2 then 
+       putStrLn $ "random choice a: " ++ (show (list_try!!random)) ++ "random choice b: " ++ (show (list_try!!random2))
+       else 
+           putStrLn $ "woops"  
+    --let pickRandomCustomer = list_try!!
+    
+
     --putStrLn $ "hi " ++ (show c)
     --putStrLn $ "hi " ++ (show d)
     --putStrLn $ "hi " ++ (show e)
@@ -114,7 +133,7 @@ main = do
    -- putMVar list2 f
     --putStrLn $ "customers added to a list"
    -- h <- takeMVar list2
-    putStrLn $ "hi" 
+     
 
     --putMVar list (test1,test2)
     --pair <- takeMVar list 
@@ -134,8 +153,8 @@ main = do
     putStrLn $ "hi " ++ (show f) -}
 
 
-pick :: [a] -> IO a
-pick xs = randomRIO (0, length xs - 1) >>= return . (xs !!)
+
+
 
 
 
