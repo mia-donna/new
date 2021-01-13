@@ -28,54 +28,66 @@ type Balance =  Int
 type Name = String
 type Value = Int
 
-data Coin = Head | Tail deriving (Show, Eq)
+data Type = Payee | Recipient deriving (Show, Eq)
 
-coinFlip :: IO Coin
+coinFlip :: IO Type
 coinFlip = do
     r <- randomIO :: IO Bool
-    return $ if r then Head else Tail
+    return $ if r then Payee else Recipient
 
 main :: IO ()
 main = do
     -- create customers
-    putStrLn $ "3 customers created."
+    putStrLn $ "4 customers created."
     let c1 = Customer {name = "C1", balance = 100, account = 1}
     let c2 = Customer {name = "C2", balance = 100, account = 2} 
     let c3 = Customer {name = "C3", balance = 100, account = 3}
-
+    let c4 = Customer {name = "C4", balance = 100, account = 4}
 
    -- create an empty box for each customer
     one <- newEmptyMVar
     two <- newEmptyMVar
     three <- newEmptyMVar
+    four <- newEmptyMVar
     value <- newEmptyMVar -- for value
-    coinbox <- newEmptyMVar -- for value
+    typebox1 <- newEmptyMVar -- for random customer type
+    typebox2 <- newEmptyMVar -- for random customer type
+    typebox3 <- newEmptyMVar -- for random customer type
+    typebox4 <- newEmptyMVar -- for random customer type
+    list <- newEmptyMVar -- for bool list
     -- fork the customer processes
-    putStrLn $ "3 customer threads being created."
-    mapM_ forkIO [process c1 one value coinbox, process c2 two value coinbox, process c3 three value coinbox] 
+    putStrLn $ "4 customer threads being created."
+    mapM_ forkIO [process c1 one value typebox1 , process c2 two value typebox2 , process c3 three value typebox3, process c4 four value typebox4 ] 
     -- create a box for each process
     c <- takeMVar one
     d <- takeMVar two
     e <- takeMVar three
+    f <- takeMVar four
     putStrLn $ "hi " ++ (show c)
     putStrLn $ "hi " ++ (show d)
     putStrLn $ "hi " ++ (show e)
-
+    putStrLn $ "hi " ++ (show f)
+    test <- takeMVar typebox1 -- only runs if c1 gets Payee
+    putStrLn $ "type test " ++ (show test)
     putStrLn $ "done"
 
-process :: Customer -> MVar Customer -> MVar Value -> MVar Coin -> IO () 
-process cust custbox value coinbox = do
+process :: Customer -> MVar Customer -> MVar Value -> MVar Type -> IO () 
+process cust custbox value typebox = do
     --v <- takeMVar value -- just a method to run it / blocks it if enabled
-    c1 <- coinFlip
+    t1 <- coinFlip
     putMVar custbox cust
-    putStrLn $ (show cust) ++ " -- got " ++ (show c1)
-    threadDelay 100
-    process cust custbox value coinbox
+    putStrLn $ (show cust) ++ " -- got " ++ (show t1)
+    if t1 == Payee then do
+        putStrLn $ "payee group"
+        putMVar typebox Payee
+    else do 
+       putStrLn $ "deposit group"   
+       
 
 
 randomN :: IO Int 
 randomN = do
-    r <- randomRIO (1, 6)
+    r <- randomRIO (1, 4)
     return r
 
 
