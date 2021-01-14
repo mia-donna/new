@@ -41,22 +41,25 @@ process :: Customer -> MVar Customer -> MVar Value -> MVar Customer -> MVar Cust
 process cust custbox value typebox_p typebox_r bool = do
     --v <- takeMVar value -- just a method to run it / blocks it if enabled
     t1 <- typeFlip
-    
+    --d1 <- diceThrow -- this saves a customer number
     putMVar custbox cust
     putStrLn $ (show cust) ++ " -- got " ++ (show t1) 
     if t1 == Payee then do
         putStrLn $ (show cust) ++ " -- joining Payee group"
         putMVar typebox_p cust
         putMVar bool True
+        
     else do 
        putStrLn $ (show cust) ++ " -- joining Recipient group"   
        putMVar typebox_r cust
        putMVar bool False
+       
 
 typeFlip :: IO Type
 typeFlip = do
     r <- randomIO :: IO Bool
     return $ if r then Payee else Recipient
+
 
 
 randomCustomer :: IO Int 
@@ -156,24 +159,38 @@ main = do
     putMVar customer_list [one, two, three, four]
     c <- takeMVar customer_list
     
-    r1 <- randomCustomers
+    r1 <- randomCustomers 
     r2 <- randomCustomers
     
+    if r1 /= r2 then do
 
-    let first_random = (c!!r1)
-    let second_random = (c!!r2)
-    fr <- takeMVar first_random
-    sr <- takeMVar second_random
+       let first_random = (c!!r1)
+       let second_random = (c!!r2)
+       fr <- takeMVar first_random
+       sr <- takeMVar second_random
      
-    putStrLn $ "RANDOM RECIPIENT IS : " ++ (show fr) ++ "RANDOM PAYEE IS : " ++ (show sr)
+       putStrLn $ "RANDOM RECIPIENT IS : " ++ (show fr) ++ "RANDOM PAYEE IS : " ++ (show sr)
      
-    a1 <- randomAmount 
+       a1 <- randomAmount 
      
-    putStrLn $ "RANDOM AMOUNT IS: " ++ (show a1) 
-    (sr, fr) <- transfer sr fr a1
-    putStrLn $ "****UPDATED****  RANDOM RECIPIENT HAS : " ++ (show fr) ++ "RANDOM PAYEE HAS : " ++ (show sr)
-    
-
+       putStrLn $ "RANDOM AMOUNT IS: " ++ (show a1) 
+       (sr, fr) <- transfer sr fr a1
+       putStrLn $ "****UPDATED****  RANDOM RECIPIENT HAS : " ++ (show fr) ++ "RANDOM PAYEE HAS : " ++ (show sr)
+     else do
+         r3 <- randomCustomers 
+         r4 <- randomCustomers
+         let first_random = (c!!r3)
+         let second_random = (c!!r4)
+         fr <- takeMVar first_random
+         sr <- takeMVar second_random
+     
+         putStrLn $ "RANDOM RECIPIENT IS : " ++ (show fr) ++ "RANDOM PAYEE IS : " ++ (show sr)
+     
+         a1 <- randomAmount 
+     
+         putStrLn $ "RANDOM AMOUNT IS: " ++ (show a1) 
+         (sr, fr) <- transfer sr fr a1
+         putStrLn $ "****UPDATED****  RANDOM RECIPIENT HAS : " ++ (show fr) ++ "RANDOM PAYEE HAS : " ++ (show sr)
     
 
 
