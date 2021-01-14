@@ -87,6 +87,20 @@ main = do
     c3bool <- newEmptyMVar
     c4bool <- newEmptyMVar
 
+-- customers that get pay
+
+    typebox_p1 <- newEmptyMVar
+    typebox_p2 <- newEmptyMVar
+    typebox_p3 <- newEmptyMVar
+    typebox_p4 <- newEmptyMVar
+
+-- customers that get rec
+    typebox_r1 <- newEmptyMVar
+    typebox_r2 <- newEmptyMVar
+    typebox_r3 <- newEmptyMVar
+    typebox_r4 <- newEmptyMVar
+
+
     value <- newEmptyMVar -- for value
     -- list <- newEmptyMVar -- attempting list of customers ** so i think customer list is created in main
     --typebox1 <- newEmptyMVar -- for random customer type
@@ -100,21 +114,71 @@ main = do
 
     -- fork the customer processes
     putStrLn $ "4 customer threads being created."
-    mapM_ forkIO [process c1 one value typebox_p typebox_r c1bool, process c2 two value typebox_p typebox_r c2bool, process c3 three value typebox_p typebox_r c3bool, process c4 four value typebox_p typebox_r c4bool] 
+    mapM_ forkIO [process c1 one value typebox_p1 typebox_r1 c1bool, process c2 two value typebox_p2 typebox_r2 c2bool, process c3 three value typebox_p3 typebox_r3 c3bool, process c4 four value typebox_p4 typebox_r4 c4bool] 
     -- create a box for each process
     
+{-
     boolist <- newEmptyMVar 
     putMVar boolist [c1bool, c2bool, c3bool, c4bool]
 
     b <- takeMVar boolist
     --putStrLn ++ (show (b!!0)) 
     let headblist = (b!!0)
+    let taillist = (b!!3)
     b <- takeMVar headblist 
-    putStrLn $"this is the head of the list " ++ (show b)
+    b2 <- takeMVar taillist
+    putStrLn $ "this is the head of the list " ++ (show b) ++ " and the tail " ++ (show b2)
+ -}
+   -- now create two boxes for payees and recipients and select one at random, then transfer
 
+ {-   
+    payee_list <- newEmptyMVar
+    putMVar payee_list [typebox_p1, typebox_p2, typebox_p3, typebox_p4 ]
+ 
+    {-
+    recipient_list <- newEmptyMVar
+    putMVar recipient_list [typebox_r1, typebox_r2, typebox_r3, typebox_r4 ]
+    -}
+    p <- takeMVar payee_list
+    let headplist = (p!!0)
+    p <- takeMVar headplist
+    putStrLn $ "RANDOM PAYEE : this is the head of the customer payee list " ++ (show p)
+ -}  
+   {-
+    r <- takeMVar recipient_list
+    let headrlist = (r!!0)
+    r <- takeMVar headplist
+    putStrLn $ "RANDOM RECIPIENT : this is the head of the customer payee list " ++ (show r)
+    -}
+
+   -- now just use the original customer list to select two customers in main
+    customer_list <- newEmptyMVar 
+    putMVar customer_list [one, two, three, four]
+    c <- takeMVar customer_list
+    
+    r1 <- randomCustomers
+    r2 <- randomCustomers
+    
+
+    let first_random = (c!!r1)
+    let second_random = (c!!r2)
+    fr <- takeMVar first_random
+    sr <- takeMVar second_random
+     
+    putStrLn $ "RANDOM RECIPIENT IS : " ++ (show fr) ++ "RANDOM PAYEE IS : " ++ (show sr)
+     
+    a1 <- randomAmount 
+     
+    putStrLn $ "RANDOM AMOUNT IS: " ++ (show a1) 
+    (sr, fr) <- transfer sr fr a1
+    putStrLn $ "****UPDATED****  RANDOM RECIPIENT HAS : " ++ (show fr) ++ "RANDOM PAYEE HAS : " ++ (show sr)
+    
 
     
 
+
+    -- below creates two boxes for rec and pay and transfers money
+{-
     payees <- takeMVar typebox_p 
     recipients <- takeMVar typebox_r
     putStrLn (show payees)
@@ -124,6 +188,9 @@ main = do
 
     putStrLn (show payees)
     putStrLn (show recipients)
+-}
+
+
     --let list_try = c:d:e:f:[]
     
     -- put the list of customers into an MVar of type MVar [Customer]
@@ -146,6 +213,13 @@ randomAmount :: IO Int
 randomAmount = do
     r <- randomRIO (10, 50)
     return r
+
+-- SELECT RANDOM CUSTOMER   
+randomCustomers :: IO Int 
+randomCustomers = do
+    r <- randomRIO (0, 3)
+    return r
+
 
 data Dice = One | Two | Three | Four deriving (Show, Eq)
 
