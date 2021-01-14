@@ -37,19 +37,21 @@ randomN = do
     return r
 
 -- CUSTOMER THREAD PROCESS : picks random type, puts the type in a type box and customer in a customer box
-process :: Customer -> MVar Customer -> MVar Value -> MVar Type -> IO () 
-process cust custbox value typebox = do
+process :: Customer -> MVar Customer -> MVar Value -> MVar Customer -> MVar Customer -> MVar Bool -> IO () 
+process cust custbox value typebox_p typebox_r bool = do
     --v <- takeMVar value -- just a method to run it / blocks it if enabled
     t1 <- typeFlip
+    
     putMVar custbox cust
-    putStrLn $ (show cust) ++ " -- got " ++ (show t1)
+    putStrLn $ (show cust) ++ " -- got " ++ (show t1) 
     if t1 == Payee then do
         putStrLn $ (show cust) ++ " -- joining Payee group"
-        --putMVar typebox Payee
-        
+        putMVar typebox_p cust
+        putMVar bool True
     else do 
        putStrLn $ (show cust) ++ " -- joining Recipient group"   
-       --putMVar typebox Recipient
+       putMVar typebox_r cust
+       putMVar bool False
 
 typeFlip :: IO Type
 typeFlip = do
@@ -79,33 +81,100 @@ main = do
     two <- newEmptyMVar
     three <- newEmptyMVar
     four <- newEmptyMVar
+    
+    c1bool <- newEmptyMVar
+    c2bool <- newEmptyMVar
+    c3bool <- newEmptyMVar
+    c4bool <- newEmptyMVar
+
     value <- newEmptyMVar -- for value
     -- list <- newEmptyMVar -- attempting list of customers ** so i think customer list is created in main
-    typebox1 <- newEmptyMVar -- for random customer type
-    typebox2 <- newEmptyMVar -- for random customer type
-    typebox3 <- newEmptyMVar -- for random customer type
-    typebox4 <- newEmptyMVar -- for random customer type
+    --typebox1 <- newEmptyMVar -- for random customer type
+    --typebox2 <- newEmptyMVar -- for random customer type
+    --typebox3 <- newEmptyMVar -- for random customer type
+    --typebox4 <- newEmptyMVar -- for random customer type
     -- typebox <- newEmptyMVar -- for random customer type
+    typebox_p <- newEmptyMVar 
+    typebox_r <- newEmptyMVar 
+
+
     -- fork the customer processes
     putStrLn $ "4 customer threads being created."
-    mapM_ forkIO [process c1 one value typebox1 , process c2 two value typebox2 , process c3 three value typebox3 , process c4 four value typebox4 ] 
+    mapM_ forkIO [process c1 one value typebox_p typebox_r c1bool, process c2 two value typebox_p typebox_r c2bool, process c3 three value typebox_p typebox_r c3bool, process c4 four value typebox_p typebox_r c4bool] 
     -- create a box for each process
-    c <- takeMVar one
-    d <- takeMVar two
-    e <- takeMVar three
-    f <- takeMVar four
+    
+    boolist <- newEmptyMVar 
+    putMVar boolist [c1bool, c2bool, c3bool, c4bool]
 
-    let list_try = c:d:e:f:[]
-    putStrLn $ "HIhere!!!!" ++ (show list_try)
-    putStrLn $ "here!!!!" ++ (show (list_try!!0)) 
-    let z = pick list_try -- work out how to return this (cant as uses IO)
+    b <- takeMVar boolist
+    --putStrLn ++ (show (b!!0)) 
+    let headblist = (b!!0)
+    b <- takeMVar headblist 
+    putStrLn $"this is the head of the list " ++ (show b)
+
+
+    
+
+    payees <- takeMVar typebox_p 
+    recipients <- takeMVar typebox_r
+    putStrLn (show payees)
+    putStrLn (show recipients)
+
+    (payees, recipients) <- transfer payees recipients 10
+
+    putStrLn (show payees)
+    putStrLn (show recipients)
+    --let list_try = c:d:e:f:[]
+    
+    -- put the list of customers into an MVar of type MVar [Customer]
+     
+    
     
     random <- randomCustomer
-    random2 <- randomCustomer
-    if random /= random2 then 
-       putStrLn $ "random choice a: " ++ (show (list_try!!random)) ++ "random choice b: " ++ (show (list_try!!random2))
-       else 
-           putStrLn $ "woops"  
+    
+    putStrLn $ "hi"
+
+-- PROCEED WITH TRANSFER  
+transfer :: Customer -> Customer -> Int -> IO (Customer, Customer)
+transfer from to amount
+  -- amount <= 0 = return (from, to)
+  | balance from < amount = return (from, to)
+  | otherwise = return ((from { balance =  ((balance  from) - amount)}),(to { balance  =  ((balance  to) + amount)}))        
+
+-- SELECT RANDOM AMOUNT TO TRANSFER  
+randomAmount :: IO Int 
+randomAmount = do
+    r <- randomRIO (10, 50)
+    return r
+
+data Dice = One | Two | Three | Four deriving (Show, Eq)
+
+
+mapIntToDice :: Int -> Dice
+mapIntToDice n = case r of
+      0 -> One
+      1 -> Two
+      2 -> Three
+      3 -> Four
+    where r = mod n 4 
+
+diceThrow :: IO Dice
+diceThrow = do
+    n <- randomIO :: IO Int
+    let dice = mapIntToDice n
+    return dice
+
+    -- below is playing with a customer list
+    --putStrLn $ "HIhere!!!!" ++ (show list_try)
+    --putStrLn $ "here!!!!" ++ (show (list_try!!0)) 
+    --let z = pick list_try -- work out how to return this (cant as uses IO)
+    
+    --random <- randomCustomer
+    --random2 <- randomCustomer
+    --if random /= random2 then 
+       --putStrLn $ "random choice a: " ++ (show (list_try!!random)) ++ "random choice b: " ++ (show (list_try!!random2))
+       --else 
+           --putStrLn $ "woops"  
     --let pickRandomCustomer = list_try!!
     
 
